@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use crate::cache::{cache_to_arc, create_cache, ContractCache};
 use crate::ViewResult;
+use chrono::{TimeZone, Utc};
 use near_crypto::{InMemorySigner, KeyType, PublicKey, Signer};
 use near_pool::{types::PoolIterator, TransactionPool};
 use near_primitives::account::{AccessKey, Account};
@@ -10,8 +11,9 @@ use near_primitives::errors::RuntimeError;
 use near_primitives::hash::CryptoHash;
 use near_primitives::profile::ProfileData;
 use near_primitives::receipt::Receipt;
-use near_primitives::runtime::config::RuntimeConfig;
-use near_primitives::state_record::StateRecord;
+use near_primitives::runtime::config::{ActualRuntimeConfig, RuntimeConfig};
+use near_primitives::runtime::migration_data::{MigrationData, MigrationFlags};
+use near_primitives::state_record::{self, StateRecord};
 use near_primitives::test_utils::account_new;
 use near_primitives::test_utils::MockEpochInfoProvider;
 use near_primitives::transaction::{ExecutionOutcome, ExecutionStatus, SignedTransaction};
@@ -56,17 +58,15 @@ pub struct GenesisConfig {
 
 impl Default for GenesisConfig {
     fn default() -> Self {
-        let runtime_config = RuntimeConfig::from_protocol_version(
-            &Arc::new(RuntimeConfig::default()),
-            PROTOCOL_VERSION,
-        )
-        .as_ref()
-        .clone();
+        let runtime_config = ActualRuntimeConfig::new(RuntimeConfig::default(), None)
+            .for_protocol_version(PROTOCOL_VERSION)
+            .as_ref()
+            .clone();
         Self {
             genesis_time: 0,
             gas_price: 100_000_000,
             gas_limit: runtime_config.wasm_config.limit_config.max_total_prepaid_gas,
-            genesis_height: 0,
+            genesis_height: 1,
             epoch_length: DEFAULT_EPOCH_LENGTH,
             block_prod_time: DEFAULT_BLOCK_PROD_TIME,
             runtime_config,
@@ -91,6 +91,27 @@ impl GenesisConfig {
             access_key: AccessKey::full_access(),
         });
         signer
+    }
+
+    pub fn genesis(&self) -> near_chain_configs::Genesis {
+        let mut genesis_config: near_chain_configs::GenesisConfig =
+            near_chain_configs::GenesisConfig::default();
+        genesis_config.genesis_time = Utc.timestamp_nanos(self.genesis_time as i64);
+        genesis_config.gas_limit = self.gas_limit;
+        genesis_config.genesis_height = self.genesis_height;
+        genesis_config.epoch_length = self.epoch_length;
+        genesis_config.num_blocks_per_year =
+            (365 * 24 * 3600 * 1_000_000_000) / self.block_prod_time;
+        genesis_config.runtime_config = self.runtime_config.clone();
+        genesis_config.num_block_producer_seats = self.validators.len() as u64;
+        genesis_config.num_block_producer_seats_per_shard =
+            vec![genesis_config.num_block_producer_seats];
+        genesis_config.validators = self.validators.clone();
+
+        near_chain_configs::Genesis::new(
+            genesis_config,
+            near_chain_configs::GenesisRecords(self.state_records.clone()),
+        )
     }
 }
 
@@ -168,18 +189,21 @@ pub struct RuntimeStandalone {
 impl RuntimeStandalone {
     pub fn new(genesis: GenesisConfig, store: Arc<Store>) -> Self {
         let mut genesis_block = Block::genesis(&genesis);
-        let mut store_update = store.store_update();
         let runtime = Runtime::new();
         let tries = ShardTries::new(store, 1);
-        let (s_update, state_root) = runtime.apply_genesis_state(
+        let state_root = runtime.apply_genesis_state(
             tries.clone(),
             0,
             &[],
-            &genesis.state_records,
+            &genesis.genesis(),
             &genesis.runtime_config,
+            genesis
+                .state_records
+                .iter()
+                .map(|s| state_record::state_record_to_account_id(s))
+                .cloned()
+                .collect(),
         );
-        store_update.merge(s_update);
-        store_update.commit().unwrap();
         genesis_block.state_root = state_root;
         let validators = genesis.validators.clone();
         Self {
@@ -280,6 +304,9 @@ impl RuntimeStandalone {
             cache: Some(cache_to_arc(&self.cache)),
             profile: profile_data.clone(),
             block_hash: Default::default(),
+            is_new_chunk: true,
+            migration_data: Arc::new(MigrationData::default()),
+            migration_flags: MigrationFlags::default(),
         };
 
         let apply_result = self.runtime.apply(
@@ -290,6 +317,7 @@ impl RuntimeStandalone {
             &self.pending_receipts,
             &Self::prepare_transactions(&mut self.tx_pool),
             self.epoch_info_provider.as_ref(),
+            None,
         )?;
         self.pending_receipts = apply_result.outgoing_receipts;
         apply_result.outcomes.iter().for_each(|outcome| {
@@ -316,8 +344,9 @@ impl RuntimeStandalone {
     /// use near_sdk_sim::runtime::init_runtime;
     /// let (mut runtime, _, _) = init_runtime(None);
     /// runtime.produce_blocks(5);
-    /// assert_eq!(runtime.current_block().block_height, 5);
-    /// assert_eq!(runtime.current_block().epoch_height, 1);
+    /// // note: genesis height is 1
+    /// assert_eq!(runtime.current_block().block_height, 6);
+    /// assert_eq!(runtime.current_block().epoch_height, 2);
     ///```
 
     pub fn produce_blocks(&mut self, num_of_blocks: u64) -> Result<(), RuntimeError> {
@@ -352,7 +381,7 @@ impl RuntimeStandalone {
     /// Returns a ViewResult containing the value or error and any logs
     pub fn view_method_call(&self, account_id: &str, method_name: &str, args: &[u8]) -> ViewResult {
         let trie_update = self.tries.new_trie_update(0, self.cur_block.state_root);
-        let viewer = TrieViewer {};
+        let viewer = TrieViewer::default();
         let mut logs = vec![];
         let view_state = ViewApplyState {
             block_height: self.cur_block.block_height,
@@ -384,9 +413,9 @@ impl RuntimeStandalone {
     /// let (mut runtime, _, _) = init_runtime(None);
     /// runtime.produce_block().unwrap();
     /// runtime.current_block();
-    /// assert_eq!(runtime.current_block().block_height, 1);
+    /// assert_eq!(runtime.current_block().block_height, 2);
     /// runtime.produce_blocks(4).unwrap();
-    /// assert_eq!(runtime.current_block().block_height, 5);
+    /// assert_eq!(runtime.current_block().block_height, 6);
     /// ```
     pub fn current_block(&self) -> &Block {
         &self.cur_block
@@ -465,12 +494,7 @@ mod tests {
         ));
         assert_eq!(
             runtime.view_account(&"alice"),
-            Some(Account {
-                amount: 165437999999999999999000,
-                code_hash: CryptoHash::default(),
-                locked: 0,
-                storage_usage: 182,
-            })
+            Some(Account::new(165437999999999999999000, 0, CryptoHash::default(), 182,))
         );
     }
 
@@ -542,14 +566,18 @@ mod tests {
     fn test_force_update_account() {
         let (mut runtime, _, _) = init_runtime(None);
         let mut bob_account = runtime.view_account(&"root").unwrap();
-        bob_account.locked = 10000;
+        bob_account = set_locked(bob_account, 10000);
         runtime.force_account_update("root".parse().unwrap(), &bob_account);
-        assert_eq!(runtime.view_account(&"root").unwrap().locked, 10000);
+        assert_eq!(runtime.view_account(&"root").unwrap().locked(), 10000);
     }
 
     #[test]
     fn can_produce_many_blocks_without_stack_overflow() {
         let (mut runtime, _signer, _) = init_runtime(None);
         runtime.produce_blocks(20_000).unwrap();
+    }
+
+    fn set_locked(account: Account, locked: Balance) -> Account {
+        Account::new(account.amount(), locked, account.code_hash(), account.storage_usage())
     }
 }

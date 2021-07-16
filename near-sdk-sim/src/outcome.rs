@@ -5,6 +5,7 @@ use core::fmt;
 use near_primitives::profile::ProfileData;
 use near_primitives::transaction::ExecutionStatus::{SuccessReceiptId, SuccessValue};
 use near_primitives::types::AccountId;
+use near_runtime::state_viewer;
 use near_sdk::borsh::BorshDeserialize;
 use near_sdk::serde::de::DeserializeOwned;
 use near_sdk::serde::export::Formatter;
@@ -191,12 +192,15 @@ pub fn outcome_into_result(
 /// which can be unwrapped and deserialized.
 #[derive(Debug)]
 pub struct ViewResult {
-    result: Result<Vec<u8>, Box<dyn std::error::Error>>,
+    result: Result<Vec<u8>, state_viewer::errors::CallFunctionError>,
     logs: Vec<String>,
 }
 
 impl ViewResult {
-    pub fn new(result: Result<Vec<u8>, Box<dyn std::error::Error>>, logs: Vec<String>) -> Self {
+    pub fn new(
+        result: Result<Vec<u8>, state_viewer::errors::CallFunctionError>,
+        logs: Vec<String>,
+    ) -> Self {
         Self { result, logs }
     }
 
@@ -218,8 +222,8 @@ impl ViewResult {
         (&self.result).as_ref().borrow().unwrap().clone()
     }
 
-    pub fn unwrap_err(&self) -> &dyn std::error::Error {
-        (&self.result).as_ref().borrow().unwrap_err().as_ref().borrow()
+    pub fn unwrap_err(&self) -> &state_viewer::errors::CallFunctionError {
+        (&self.result).as_ref().unwrap_err()
     }
 
     /// Interpret the value as a JSON::Value
