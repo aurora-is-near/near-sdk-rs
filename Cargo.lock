@@ -1607,9 +1607,9 @@ dependencies = [
  "hex",
  "jemallocator",
  "near-crypto",
- "near-primitives-core 0.1.0",
- "near-rpc-error-macro 0.1.0 (git+https://github.com/near/nearcore.git?rev=8a37d39629885a41dde58b60642bcf1e99407d90)",
- "near-vm-errors 3.0.0",
+ "near-primitives-core",
+ "near-rpc-error-macro",
+ "near-vm-errors",
  "num-rational",
  "primitive-types",
  "rand 0.7.3",
@@ -1640,37 +1640,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "near-primitives-core"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2b3fb5acf3a494aed4e848446ef2d6ebb47dbe91c681105d4d1786c2ee63e52"
-dependencies = [
- "base64 0.13.0",
- "borsh",
- "bs58",
- "derive_more",
- "hex",
- "lazy_static",
- "num-rational",
- "serde",
- "serde_json",
- "sha2",
-]
-
-[[package]]
-name = "near-rpc-error-core"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffa8dbf8437a28ac40fcb85859ab0d0b8385013935b000c7a51ae79631dd74d9"
-dependencies = [
- "proc-macro2",
- "quote",
- "serde",
- "serde_json",
- "syn",
-]
-
-[[package]]
 name = "near-rpc-error-core"
 version = "0.1.0"
 source = "git+https://github.com/near/nearcore.git?rev=8a37d39629885a41dde58b60642bcf1e99407d90#8a37d39629885a41dde58b60642bcf1e99407d90"
@@ -1684,23 +1653,9 @@ dependencies = [
 [[package]]
 name = "near-rpc-error-macro"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c6111d713e90c7c551dee937f4a06cb9ea2672243455a4454cc7566387ba2d9"
-dependencies = [
- "near-rpc-error-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro2",
- "quote",
- "serde",
- "serde_json",
- "syn",
-]
-
-[[package]]
-name = "near-rpc-error-macro"
-version = "0.1.0"
 source = "git+https://github.com/near/nearcore.git?rev=8a37d39629885a41dde58b60642bcf1e99407d90#8a37d39629885a41dde58b60642bcf1e99407d90"
 dependencies = [
- "near-rpc-error-core 0.1.0 (git+https://github.com/near/nearcore.git?rev=8a37d39629885a41dde58b60642bcf1e99407d90)",
+ "near-rpc-error-core",
  "proc-macro2",
  "quote",
  "serde",
@@ -1718,25 +1673,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "near-runtime-utils"
-version = "4.0.0-pre.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a48d80c4ca1d4cf99bc16490e1e3d49826c150dfc4410ac498918e45c7d98e07"
-dependencies = [
- "lazy_static",
- "regex",
-]
-
-[[package]]
 name = "near-sdk"
 version = "3.1.0"
 dependencies = [
  "base64 0.13.0",
  "borsh",
  "bs58",
- "near-primitives-core 0.4.0",
+ "near-primitives-core",
  "near-sdk-macros",
- "near-vm-logic 4.0.0-pre.1",
+ "near-vm-logic",
  "once_cell",
  "quickcheck",
  "rand 0.7.3",
@@ -1782,7 +1727,7 @@ dependencies = [
  "near-primitives",
  "near-sdk",
  "near-store",
- "near-vm-logic 3.0.0",
+ "near-vm-logic",
  "node-runtime",
  "quickcheck",
  "quickcheck_macros",
@@ -1820,19 +1765,7 @@ source = "git+https://github.com/near/nearcore.git?rev=8a37d39629885a41dde58b606
 dependencies = [
  "borsh",
  "hex",
- "near-rpc-error-macro 0.1.0 (git+https://github.com/near/nearcore.git?rev=8a37d39629885a41dde58b60642bcf1e99407d90)",
- "serde",
-]
-
-[[package]]
-name = "near-vm-errors"
-version = "4.0.0-pre.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e281d8730ed8cb0e3e69fb689acee6b93cdb43824cd69a8ffd7e1bfcbd1177d7"
-dependencies = [
- "borsh",
- "hex",
- "near-rpc-error-macro 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "near-rpc-error-macro",
  "serde",
 ]
 
@@ -1847,28 +1780,10 @@ dependencies = [
  "byteorder",
  "near-crypto",
  "near-primitives",
- "near-primitives-core 0.1.0",
- "near-runtime-utils 3.0.0",
- "near-vm-errors 3.0.0",
+ "near-primitives-core",
+ "near-runtime-utils",
+ "near-vm-errors",
  "ripemd160",
- "serde",
- "sha2",
- "sha3",
-]
-
-[[package]]
-name = "near-vm-logic"
-version = "4.0.0-pre.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e11cb28a2d07f37680efdaf860f4c9802828c44fc50c08009e7884de75d982c5"
-dependencies = [
- "base64 0.13.0",
- "borsh",
- "bs58",
- "byteorder",
- "near-primitives-core 0.4.0",
- "near-runtime-utils 4.0.0-pre.1",
- "near-vm-errors 4.0.0-pre.1",
  "serde",
  "sha2",
  "sha3",
@@ -1883,8 +1798,8 @@ dependencies = [
  "borsh",
  "cached",
  "near-primitives",
- "near-vm-errors 3.0.0",
- "near-vm-logic 3.0.0",
+ "near-vm-errors",
+ "near-vm-logic",
  "parity-wasm",
  "pwasm-utils",
  "serde",
@@ -1930,10 +1845,10 @@ dependencies = [
  "near-crypto",
  "near-metrics",
  "near-primitives",
- "near-runtime-utils 3.0.0",
+ "near-runtime-utils",
  "near-store",
- "near-vm-errors 3.0.0",
- "near-vm-logic 3.0.0",
+ "near-vm-errors",
+ "near-vm-logic",
  "near-vm-runner",
  "num-bigint",
  "num-rational",

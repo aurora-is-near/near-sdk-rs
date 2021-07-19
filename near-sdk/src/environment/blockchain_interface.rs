@@ -35,6 +35,17 @@ pub trait BlockchainInterface {
     unsafe fn sha256(&self, value_len: u64, value_ptr: u64, register_id: u64);
     unsafe fn keccak256(&self, value_len: u64, value_ptr: u64, register_id: u64);
     unsafe fn keccak512(&self, value_len: u64, value_ptr: u64, register_id: u64);
+    unsafe fn ripemd160(&self, value_len: u64, value_ptr: u64, register_id: u64);
+    unsafe fn ecrecover(
+        &self,
+        hash_len: u64,
+        hash_ptr: u64,
+        sig_len: u64,
+        sig_ptr: u64,
+        v: u64,
+        malleability_flag: u64,
+        register_id: u64,
+    ) -> u64;
     // #####################
     // # Miscellaneous API #
     // #####################

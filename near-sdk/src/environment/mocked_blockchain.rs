@@ -182,6 +182,26 @@ impl BlockchainInterface for MockedBlockchain {
         self.logic.borrow_mut().keccak512(value_len, value_ptr, register_id).unwrap()
     }
 
+    unsafe fn ripemd160(&self, value_len: u64, value_ptr: u64, register_id: u64) {
+        self.logic.borrow_mut().ripemd160(value_len, value_ptr, register_id).unwrap()
+    }
+
+    unsafe fn ecrecover(
+        &self,
+        hash_len: u64,
+        hash_ptr: u64,
+        sig_len: u64,
+        sig_ptr: u64,
+        v: u64,
+        malleability_flag: u64,
+        register_id: u64,
+    ) -> u64 {
+        self.logic
+            .borrow_mut()
+            .ecrecover(hash_len, hash_ptr, sig_len, sig_ptr, v, malleability_flag, register_id)
+            .unwrap()
+    }
+
     unsafe fn value_return(&self, value_len: u64, value_ptr: u64) {
         self.logic.borrow_mut().value_return(value_len, value_ptr).unwrap()
     }
