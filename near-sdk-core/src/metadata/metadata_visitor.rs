@@ -5,7 +5,7 @@
 use crate::ItemImplInfo;
 
 use quote::quote;
-use syn::export::{ToTokens, TokenStream2};
+use syn::__private::{ToTokens, TokenStream2};
 use syn::visit::Visit;
 use syn::{Error, ItemImpl};
 

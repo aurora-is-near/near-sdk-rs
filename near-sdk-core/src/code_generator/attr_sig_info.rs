@@ -1,4 +1,4 @@
-use syn::export::TokenStream2;
+use syn::__private::TokenStream2;
 
 use crate::info_extractor::{
     ArgInfo, AttrSigInfo, BindgenArgType, InputStructType, SerializerType,

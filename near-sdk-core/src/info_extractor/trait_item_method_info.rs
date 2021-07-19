@@ -1,5 +1,5 @@
 use crate::info_extractor::AttrSigInfo;
-use syn::export::Span;
+use syn::__private::Span;
 use syn::spanned::Spanned;
 use syn::{Error, LitByteStr, TraitItemMethod};
 

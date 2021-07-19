@@ -1,6 +1,6 @@
 use crate::info_extractor::TraitItemMethodInfo;
 use inflector::Inflector;
-use syn::export::Span;
+use syn::__private::Span;
 use syn::spanned::Spanned;
 use syn::{Error, Ident, ItemTrait, TraitItem};
 

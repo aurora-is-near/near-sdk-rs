@@ -1,7 +1,7 @@
 use crate::{BindgenArgType, ImplItemMethodInfo, InputStructType, MethodType, SerializerType};
 
 use quote::quote;
-use syn::export::TokenStream2;
+use syn::__private::TokenStream2;
 use syn::ReturnType;
 
 impl ImplItemMethodInfo {

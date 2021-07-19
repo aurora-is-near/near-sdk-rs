@@ -1,6 +1,6 @@
 use crate::info_extractor::ItemTraitInfo;
 use quote::quote;
-use syn::export::TokenStream2;
+use syn::__private::TokenStream2;
 
 impl ItemTraitInfo {
     /// Generate code that wrapps external calls.
