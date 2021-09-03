@@ -109,10 +109,11 @@ impl GenesisConfig {
             vec![genesis_config.num_block_producer_seats];
         genesis_config.validators = self.validators.clone();
 
-        near_chain_configs::Genesis::new(
-            genesis_config,
-            near_chain_configs::GenesisRecords(self.state_records.clone()),
-        )
+        near_chain_configs::Genesis {
+            config: genesis_config,
+            records: near_chain_configs::GenesisRecords(self.state_records.clone()),
+            records_file: Default::default(),
+        }
     }
 }
 
