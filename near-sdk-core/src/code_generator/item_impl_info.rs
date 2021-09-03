@@ -1,6 +1,6 @@
 use crate::ItemImplInfo;
-use syn::__private::TokenStream2;
 use syn::Ident;
+use syn::__private::TokenStream2;
 
 impl ItemImplInfo {
     /// Generate the code that wraps

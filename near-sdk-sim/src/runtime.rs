@@ -16,7 +16,9 @@ use near_primitives::runtime::migration_data::{MigrationData, MigrationFlags};
 use near_primitives::state_record::{self, StateRecord};
 use near_primitives::test_utils::account_new;
 use near_primitives::test_utils::MockEpochInfoProvider;
-use near_primitives::transaction::{ExecutionOutcome, ExecutionStatus, SignedTransaction, ExecutionMetadata};
+use near_primitives::transaction::{
+    ExecutionMetadata, ExecutionOutcome, ExecutionStatus, SignedTransaction,
+};
 use near_primitives::types::{
     AccountInfo, Balance, BlockHeight, EpochHeight, EpochId, EpochInfoProvider, Gas,
     StateChangeCause,
@@ -82,10 +84,8 @@ impl GenesisConfig {
         let signer = InMemorySigner::from_seed(account_id.clone(), KeyType::ED25519, "test");
         let root_account = account_new(10u128.pow(33), CryptoHash::default());
 
-        self.state_records.push(StateRecord::Account {
-            account_id: account_id.clone(),
-            account: root_account,
-        });
+        self.state_records
+            .push(StateRecord::Account { account_id: account_id.clone(), account: root_account });
         self.state_records.push(StateRecord::AccessKey {
             account_id: account_id.clone(),
             public_key: signer.public_key(),
@@ -331,8 +331,10 @@ impl RuntimeStandalone {
                 ExecutionMetadata::V1 => (),
             };
         });
-        let (update, _) =
-            self.tries.apply_all(&apply_result.trie_changes, shard_uid).expect("Unexpected Storage error");
+        let (update, _) = self
+            .tries
+            .apply_all(&apply_result.trie_changes, shard_uid)
+            .expect("Unexpected Storage error");
         update.commit().expect("Unexpected io error");
         self.cur_block = self.cur_block.produce(
             apply_result.state_root,
@@ -386,8 +388,7 @@ impl RuntimeStandalone {
         let account_id = crate::to_near_account_id(account_id);
         let shard_uid = as_shard_uid(0);
         let trie_update = self.tries.new_trie_update(shard_uid, self.cur_block.state_root);
-        get_access_key(&trie_update, &account_id, public_key)
-            .expect("Unexpected Storage error")
+        get_access_key(&trie_update, &account_id, public_key).expect("Unexpected Storage error")
     }
 
     /// Returns a ViewResult containing the value or error and any logs
@@ -452,10 +453,7 @@ impl RuntimeStandalone {
 }
 
 fn as_shard_uid(id: u32) -> near_primitives::shard_layout::ShardUId {
-    near_primitives::shard_layout::ShardUId {
-        version: 0,
-        shard_id: id,
-    }
+    near_primitives::shard_layout::ShardUId { version: 0, shard_id: id }
 }
 
 #[cfg(test)]

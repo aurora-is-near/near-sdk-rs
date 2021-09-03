@@ -112,7 +112,8 @@ impl UserTransaction {
 
     /// Delete an account and send remaining balance to `beneficiary_id`
     pub fn delete_account(mut self, beneficiary_id: AccountId) -> Self {
-        self.transaction = self.transaction.delete_account(crate::to_near_account_id(beneficiary_id));
+        self.transaction =
+            self.transaction.delete_account(crate::to_near_account_id(beneficiary_id));
         self
     }
 }
@@ -189,8 +190,11 @@ impl UserAccount {
         account_id: AccountId,
         deposit: Balance,
     ) -> UserAccount {
-        let signer =
-            InMemorySigner::from_seed(crate::to_near_account_id(account_id.as_ref()), KeyType::ED25519, account_id.as_str());
+        let signer = InMemorySigner::from_seed(
+            crate::to_near_account_id(account_id.as_ref()),
+            KeyType::ED25519,
+            account_id.as_str(),
+        );
         self.submit_transaction(
             self.transaction(account_id.clone())
                 .create_account()
@@ -230,8 +234,11 @@ impl UserAccount {
         deposit: Balance,
         gas: Gas,
     ) -> UserAccount {
-        let signer =
-            InMemorySigner::from_seed(crate::to_near_account_id(account_id.as_ref()), KeyType::ED25519, account_id.as_str());
+        let signer = InMemorySigner::from_seed(
+            crate::to_near_account_id(account_id.as_ref()),
+            KeyType::ED25519,
+            account_id.as_str(),
+        );
         self.submit_transaction(
             self.transaction(account_id.clone())
                 .create_account()
@@ -290,8 +297,11 @@ impl UserAccount {
         account_id: AccountId,
         amount: Balance,
     ) -> UserAccount {
-        let signer =
-            InMemorySigner::from_seed(crate::to_near_account_id(account_id.as_ref()), KeyType::ED25519, account_id.as_str());
+        let signer = InMemorySigner::from_seed(
+            crate::to_near_account_id(account_id.as_ref()),
+            KeyType::ED25519,
+            account_id.as_str(),
+        );
         signer_user
             .submit_transaction(
                 signer_user

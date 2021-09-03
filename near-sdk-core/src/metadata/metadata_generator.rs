@@ -1,8 +1,8 @@
 use crate::{BindgenArgType, ImplItemMethodInfo, InputStructType, MethodType, SerializerType};
 
 use quote::quote;
-use syn::__private::TokenStream2;
 use syn::ReturnType;
+use syn::__private::TokenStream2;
 
 impl ImplItemMethodInfo {
     /// Generates metadata struct for this method.
