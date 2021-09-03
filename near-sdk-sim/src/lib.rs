@@ -22,3 +22,8 @@ pub use user::*;
 
 #[doc(hidden)]
 pub use lazy_static_include;
+
+#[doc(hidden)]
+pub(crate) fn to_near_account_id<T: AsRef<str>>(account_id: T) -> near_primitives::types::AccountId {
+    account_id.as_ref().parse().unwrap()
+}

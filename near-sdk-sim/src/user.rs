@@ -36,7 +36,7 @@ type Runtime = Rc<RefCell<RuntimeStandalone>>;
 /// let account_id = "alice";
 /// let transaction = master_account.create_transaction(account_id.parse().unwrap());
 /// // Creates a signer which contains a public key.
-/// let signer = InMemorySigner::from_seed(account_id, KeyType::ED25519, account_id);
+/// let signer = InMemorySigner::from_seed(account_id.parse().unwrap(), KeyType::ED25519, account_id);
 /// let res = transaction.create_account()
 ///                      .add_key(signer.public_key(), AccessKey::full_access())
 ///                      .transfer(to_yocto("10"))
@@ -112,7 +112,7 @@ impl UserTransaction {
 
     /// Delete an account and send remaining balance to `beneficiary_id`
     pub fn delete_account(mut self, beneficiary_id: AccountId) -> Self {
-        self.transaction = self.transaction.delete_account(String::from(beneficiary_id));
+        self.transaction = self.transaction.delete_account(crate::to_near_account_id(beneficiary_id));
         self
     }
 }
@@ -190,7 +190,7 @@ impl UserAccount {
         deposit: Balance,
     ) -> UserAccount {
         let signer =
-            InMemorySigner::from_seed(account_id.as_str(), KeyType::ED25519, account_id.as_str());
+            InMemorySigner::from_seed(crate::to_near_account_id(account_id.as_ref()), KeyType::ED25519, account_id.as_str());
         self.submit_transaction(
             self.transaction(account_id.clone())
                 .create_account()
@@ -231,7 +231,7 @@ impl UserAccount {
         gas: Gas,
     ) -> UserAccount {
         let signer =
-            InMemorySigner::from_seed(account_id.as_str(), KeyType::ED25519, account_id.as_str());
+            InMemorySigner::from_seed(crate::to_near_account_id(account_id.as_ref()), KeyType::ED25519, account_id.as_str());
         self.submit_transaction(
             self.transaction(account_id.clone())
                 .create_account()
@@ -252,9 +252,9 @@ impl UserAccount {
             .nonce
             + 1;
         Transaction::new(
-            String::from(self.account_id()),
+            crate::to_near_account_id(self.account_id()),
             self.signer.public_key(),
-            String::from(receiver_id),
+            crate::to_near_account_id(receiver_id),
             nonce,
             CryptoHash::default(),
         )
@@ -291,7 +291,7 @@ impl UserAccount {
         amount: Balance,
     ) -> UserAccount {
         let signer =
-            InMemorySigner::from_seed(account_id.as_str(), KeyType::ED25519, account_id.as_str());
+            InMemorySigner::from_seed(crate::to_near_account_id(account_id.as_ref()), KeyType::ED25519, account_id.as_str());
         signer_user
             .submit_transaction(
                 signer_user
@@ -412,7 +412,6 @@ pub fn init_simulator(genesis_config: Option<GenesisConfig>) -> UserAccount {
 ///   init_method: new_default_meta(master_account_id, initial_balance.into()),
 /// };
 /// ```
-#[doc(inline)]
 #[macro_export]
 macro_rules! deploy {
     ($contract: ident, $account_id:expr, $wasm_bytes: expr, $user:expr $(,)?) => {

@@ -16,7 +16,7 @@ use near_primitives::runtime::migration_data::{MigrationData, MigrationFlags};
 use near_primitives::state_record::{self, StateRecord};
 use near_primitives::test_utils::account_new;
 use near_primitives::test_utils::MockEpochInfoProvider;
-use near_primitives::transaction::{ExecutionOutcome, ExecutionStatus, SignedTransaction};
+use near_primitives::transaction::{ExecutionOutcome, ExecutionStatus, SignedTransaction, ExecutionMetadata};
 use near_primitives::types::{
     AccountInfo, Balance, BlockHeight, EpochHeight, EpochId, EpochInfoProvider, Gas,
     StateChangeCause,
@@ -58,7 +58,7 @@ pub struct GenesisConfig {
 
 impl Default for GenesisConfig {
     fn default() -> Self {
-        let runtime_config = ActualRuntimeConfig::new(RuntimeConfig::default(), None)
+        let runtime_config = ActualRuntimeConfig::new(RuntimeConfig::default())
             .for_protocol_version(PROTOCOL_VERSION)
             .as_ref()
             .clone();
@@ -78,15 +78,16 @@ impl Default for GenesisConfig {
 
 impl GenesisConfig {
     pub fn init_root_signer(&mut self, account_id: &str) -> InMemorySigner {
-        let signer = InMemorySigner::from_seed(account_id, KeyType::ED25519, "test");
+        let account_id: near_primitives::types::AccountId = account_id.parse().unwrap();
+        let signer = InMemorySigner::from_seed(account_id.clone(), KeyType::ED25519, "test");
         let root_account = account_new(10u128.pow(33), CryptoHash::default());
 
         self.state_records.push(StateRecord::Account {
-            account_id: account_id.to_string(),
+            account_id: account_id.clone(),
             account: root_account,
         });
         self.state_records.push(StateRecord::AccessKey {
-            account_id: account_id.to_string(),
+            account_id: account_id.clone(),
             public_key: signer.public_key(),
             access_key: AccessKey::full_access(),
         });
@@ -190,7 +191,7 @@ impl RuntimeStandalone {
     pub fn new(genesis: GenesisConfig, store: Arc<Store>) -> Self {
         let mut genesis_block = Block::genesis(&genesis);
         let runtime = Runtime::new();
-        let tries = ShardTries::new(store, 1);
+        let tries = ShardTries::new(store, 0, 1);
         let state_root = runtime.apply_genesis_state(
             tries.clone(),
             0,
@@ -285,7 +286,6 @@ impl RuntimeStandalone {
 
     /// Processes one block. Populates outcomes and producining new pending_receipts.
     pub fn produce_block(&mut self) -> Result<(), RuntimeError> {
-        let profile_data = ProfileData::default();
         let apply_state = ApplyState {
             block_index: self.cur_block.block_height,
             prev_block_hash: Default::default(),
@@ -302,15 +302,15 @@ impl RuntimeStandalone {
             cache: None,
             #[cfg(not(feature = "no_contract_cache"))]
             cache: Some(cache_to_arc(&self.cache)),
-            profile: profile_data.clone(),
             block_hash: Default::default(),
             is_new_chunk: true,
             migration_data: Arc::new(MigrationData::default()),
             migration_flags: MigrationFlags::default(),
         };
 
+        let shard_uid = as_shard_uid(0);
         let apply_result = self.runtime.apply(
-            self.tries.get_trie_for_shard(0),
+            self.tries.get_trie_for_shard(shard_uid),
             self.cur_block.state_root,
             &None,
             &apply_state,
@@ -323,10 +323,16 @@ impl RuntimeStandalone {
         apply_result.outcomes.iter().for_each(|outcome| {
             self.last_outcomes.push(outcome.id);
             self.outcomes.insert(outcome.id, outcome.outcome.clone());
-            self.profile.insert(outcome.id, profile_data.clone());
+            // purposely not using `if let` to take advantage of exhaustiveness check
+            match &outcome.outcome.metadata {
+                ExecutionMetadata::V2(profile) => {
+                    self.profile.insert(outcome.id, profile.clone());
+                }
+                ExecutionMetadata::V1 => (),
+            };
         });
         let (update, _) =
-            self.tries.apply_all(&apply_result.trie_changes, 0).expect("Unexpected Storage error");
+            self.tries.apply_all(&apply_result.trie_changes, shard_uid).expect("Unexpected Storage error");
         update.commit().expect("Unexpected io error");
         self.cur_block = self.cur_block.produce(
             apply_result.state_root,
@@ -358,29 +364,37 @@ impl RuntimeStandalone {
 
     /// Force alter account and change state_root.
     pub fn force_account_update(&mut self, account_id: AccountId, account: &Account) {
-        let mut trie_update = self.tries.new_trie_update(0, self.cur_block.state_root);
-        set_account(&mut trie_update, String::from(account_id), account);
+        let account_id = crate::to_near_account_id(account_id);
+        let shard_uid = as_shard_uid(0);
+        let mut trie_update = self.tries.new_trie_update(shard_uid, self.cur_block.state_root);
+        set_account(&mut trie_update, account_id, account);
         trie_update.commit(StateChangeCause::ValidatorAccountsUpdate);
         let (trie_changes, _) = trie_update.finalize().expect("Unexpected Storage error");
-        let (store_update, new_root) = self.tries.apply_all(&trie_changes, 0).unwrap();
+        let (store_update, new_root) = self.tries.apply_all(&trie_changes, shard_uid).unwrap();
         store_update.commit().expect("No io errors expected");
         self.cur_block.state_root = new_root;
     }
 
     pub fn view_account(&self, account_id: &str) -> Option<Account> {
-        let trie_update = self.tries.new_trie_update(0, self.cur_block.state_root);
-        get_account(&trie_update, &account_id.to_string()).expect("Unexpected Storage error")
+        let account_id = crate::to_near_account_id(account_id);
+        let shard_uid = as_shard_uid(0);
+        let trie_update = self.tries.new_trie_update(shard_uid, self.cur_block.state_root);
+        get_account(&trie_update, &account_id).expect("Unexpected Storage error")
     }
 
     pub fn view_access_key(&self, account_id: &str, public_key: &PublicKey) -> Option<AccessKey> {
-        let trie_update = self.tries.new_trie_update(0, self.cur_block.state_root);
-        get_access_key(&trie_update, &account_id.to_string(), public_key)
+        let account_id = crate::to_near_account_id(account_id);
+        let shard_uid = as_shard_uid(0);
+        let trie_update = self.tries.new_trie_update(shard_uid, self.cur_block.state_root);
+        get_access_key(&trie_update, &account_id, public_key)
             .expect("Unexpected Storage error")
     }
 
     /// Returns a ViewResult containing the value or error and any logs
     pub fn view_method_call(&self, account_id: &str, method_name: &str, args: &[u8]) -> ViewResult {
-        let trie_update = self.tries.new_trie_update(0, self.cur_block.state_root);
+        let account_id = crate::to_near_account_id(account_id);
+        let shard_uid = as_shard_uid(0);
+        let trie_update = self.tries.new_trie_update(shard_uid, self.cur_block.state_root);
         let viewer = TrieViewer::default();
         let mut logs = vec![];
         let view_state = ViewApplyState {
@@ -396,7 +410,7 @@ impl RuntimeStandalone {
         let result = viewer.call_function(
             trie_update,
             view_state,
-            &account_id.to_string(),
+            &account_id,
             method_name,
             args,
             &mut logs,
@@ -434,6 +448,13 @@ impl RuntimeStandalone {
             }
         }
         res
+    }
+}
+
+fn as_shard_uid(id: u32) -> near_primitives::shard_layout::ShardUId {
+    near_primitives::shard_layout::ShardUId {
+        version: 0,
+        shard_id: id,
     }
 }
 
