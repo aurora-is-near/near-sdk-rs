@@ -11,7 +11,7 @@ use near_primitives::errors::RuntimeError;
 use near_primitives::hash::CryptoHash;
 use near_primitives::profile::ProfileData;
 use near_primitives::receipt::Receipt;
-use near_primitives::runtime::config::{ActualRuntimeConfig, RuntimeConfig};
+use near_primitives::runtime::config::RuntimeConfig;
 use near_primitives::runtime::migration_data::{MigrationData, MigrationFlags};
 use near_primitives::state_record::{self, StateRecord};
 use near_primitives::test_utils::account_new;
@@ -60,10 +60,7 @@ pub struct GenesisConfig {
 
 impl Default for GenesisConfig {
     fn default() -> Self {
-        let runtime_config = ActualRuntimeConfig::new(RuntimeConfig::default())
-            .for_protocol_version(PROTOCOL_VERSION)
-            .as_ref()
-            .clone();
+        let runtime_config = RuntimeConfig::default();
         Self {
             genesis_time: 0,
             gas_price: 100_000_000,

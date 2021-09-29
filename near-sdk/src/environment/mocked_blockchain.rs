@@ -56,7 +56,7 @@ impl MockedBlockchain {
     ) -> Self {
         let mut ext = Box::new(MockedExternal::new());
         ext.fake_trie = storage;
-        ext.validators = validators;
+        ext.validators = validators.into_iter().map(|(a, b)| (a.parse().unwrap(), b)).collect();
         let memory = memory_opt.unwrap_or(Box::new(MockedMemory {}));
         let promise_results = Box::new(promise_results.into_iter().map(From::from).collect());
         let config = Box::new(config);
@@ -72,7 +72,6 @@ impl MockedBlockchain {
                 &*(logic_fixture.fees_config.as_mut() as *const RuntimeFeesConfig),
                 &*(logic_fixture.promise_results.as_ref().as_slice() as *const [VmPromiseResult]),
                 &mut *(logic_fixture.memory.as_mut() as *mut dyn MemoryLike),
-                Default::default(),
                 u32::MAX,
             )
         };

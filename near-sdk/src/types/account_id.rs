@@ -70,6 +70,12 @@ impl From<AccountId> for String {
     }
 }
 
+impl From<AccountId> for near_vm_logic::types::AccountId {
+    fn from(id: AccountId) -> Self {
+        id.0.as_str().parse().unwrap()
+    }
+}
+
 impl AsRef<str> for AccountId {
     fn as_ref(&self) -> &str {
         self.0.as_str()

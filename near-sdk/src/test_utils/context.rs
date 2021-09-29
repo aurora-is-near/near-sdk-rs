@@ -37,7 +37,7 @@ impl VMContextBuilder {
                 attached_deposit: 0,
                 prepaid_gas: 300 * 10u64.pow(12),
                 random_seed: vec![0u8; 32],
-                is_view: false,
+                view_config: None,
                 output_data_receivers: vec![],
             },
         }
@@ -109,7 +109,12 @@ impl VMContextBuilder {
     }
 
     pub fn is_view(&mut self, is_view: bool) -> &mut Self {
-        self.context.is_view = is_view;
+        if is_view {
+            self.context.view_config =
+                Some(near_primitives_core::config::ViewConfig { max_gas_burnt: u64::MAX });
+        } else {
+            self.context.view_config = None;
+        }
         self
     }
 
