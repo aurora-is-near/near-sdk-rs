@@ -1,3 +1,5 @@
+use near_primitives_core::runtime::fees::RuntimeFeesConfig;
+
 use crate::test_utils::VMContextBuilder;
 use crate::{env, AccountId, MockedBlockchain, VMConfig};
 
@@ -23,7 +25,7 @@ pub fn setup_with_config(vm_config: VMConfig) {
     env::set_blockchain_interface(Box::new(MockedBlockchain::new(
         context,
         vm_config,
-        Default::default(),
+        RuntimeFeesConfig::test(),
         vec![],
         storage,
         Default::default(),
@@ -33,7 +35,7 @@ pub fn setup_with_config(vm_config: VMConfig) {
 
 /// Setup the blockchain interface with a default configuration.
 pub fn setup() {
-    setup_with_config(VMConfig::default());
+    setup_with_config(VMConfig::test());
 }
 
 // free == effectively unlimited gas

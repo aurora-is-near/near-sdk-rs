@@ -1,3 +1,6 @@
+use near_primitives_core::runtime::fees::RuntimeFeesConfig;
+use near_vm_logic::{ViewConfig, VMConfig};
+
 use crate::environment::mocked_blockchain::MockedBlockchain;
 use crate::test_utils::test_env::*;
 use crate::AccountId;
@@ -18,15 +21,19 @@ pub struct VMContextBuilder {
     pub context: VMContext,
 }
 
+fn convert_account_id(a: AccountId) -> near_primitives_core::account::id::AccountId {
+    a.as_ref().parse().unwrap()
+}
+
 #[allow(dead_code)]
 impl VMContextBuilder {
     pub fn new() -> Self {
         Self {
             context: VMContext {
-                current_account_id: alice().into(),
-                signer_account_id: bob().into(),
+                current_account_id: convert_account_id(alice()),
+                signer_account_id: convert_account_id(bob()),
                 signer_account_pk: vec![0u8; 32],
-                predecessor_account_id: bob().into(),
+                predecessor_account_id: convert_account_id(bob()),
                 input: vec![],
                 block_index: 0,
                 block_timestamp: 0,
@@ -37,19 +44,19 @@ impl VMContextBuilder {
                 attached_deposit: 0,
                 prepaid_gas: 300 * 10u64.pow(12),
                 random_seed: vec![0u8; 32],
-                is_view: false,
+                view_config: None,
                 output_data_receivers: vec![],
             },
         }
     }
 
     pub fn current_account_id(&mut self, account_id: AccountId) -> &mut Self {
-        self.context.current_account_id = account_id.into();
+        self.context.current_account_id = convert_account_id(account_id);
         self
     }
 
     pub fn signer_account_id(&mut self, account_id: AccountId) -> &mut Self {
-        self.context.signer_account_id = account_id.into();
+        self.context.signer_account_id = convert_account_id(account_id);
         self
     }
 
@@ -59,7 +66,7 @@ impl VMContextBuilder {
     }
 
     pub fn predecessor_account_id(&mut self, account_id: AccountId) -> &mut Self {
-        self.context.predecessor_account_id = account_id.into();
+        self.context.predecessor_account_id = convert_account_id(account_id);
         self
     }
 
@@ -109,7 +116,13 @@ impl VMContextBuilder {
     }
 
     pub fn is_view(&mut self, is_view: bool) -> &mut Self {
-        self.context.is_view = is_view;
+        if is_view {
+            self.context.view_config = Some(ViewConfig {
+                max_gas_burnt: 200_000_000_000_000,
+            });
+        } else {
+            self.context.view_config = None;
+        }
         self
     }
 
@@ -131,8 +144,8 @@ pub fn testing_env_with_promise_results(context: VMContext, promise_result: Prom
 
     crate::env::set_blockchain_interface(Box::new(MockedBlockchain::new(
         context,
-        Default::default(),
-        Default::default(),
+        VMConfig::test(),
+        RuntimeFeesConfig::test(),
         vec![promise_result],
         storage,
         Default::default(),

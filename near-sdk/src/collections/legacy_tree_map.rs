@@ -680,7 +680,7 @@ mod tests {
     extern crate rand;
     use self::rand::RngCore;
     use quickcheck::QuickCheck;
-    use serde::export::Formatter;
+    use std::fmt::Formatter;
     use std::collections::BTreeMap;
     use std::collections::HashSet;
     use std::fmt::{Debug, Result};

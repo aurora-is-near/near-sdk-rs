@@ -1,5 +1,5 @@
 error: Failed to parse code decorated with `metadata!{}` macro. Only valid Rust is supported.
-  --> $DIR/metadata_invalid_rust.rs:3:1
+  --> compilation_tests/metadata_invalid_rust.rs:3:1
    |
 3  | / metadata! {
 4  | | FOOBAR
@@ -10,10 +10,10 @@ error: Failed to parse code decorated with `metadata!{}` macro. Only valid Rust 
 18 | | }
    | |_^
    |
-   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `metadata` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unused import: `near_bindgen`
- --> $DIR/metadata_invalid_rust.rs:1:16
+ --> compilation_tests/metadata_invalid_rust.rs:1:16
   |
 1 | use near_sdk::{near_bindgen, metadata};
   |                ^^^^^^^^^^^^
@@ -21,7 +21,7 @@ warning: unused import: `near_bindgen`
   = note: `#[warn(unused_imports)]` on by default
 
 warning: unused imports: `BorshDeserialize`, `BorshSerialize`
- --> $DIR/metadata_invalid_rust.rs:2:13
+ --> compilation_tests/metadata_invalid_rust.rs:2:13
   |
 2 | use borsh::{BorshDeserialize, BorshSerialize};
   |             ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^

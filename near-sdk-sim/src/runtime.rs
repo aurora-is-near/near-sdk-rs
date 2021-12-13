@@ -11,7 +11,8 @@ use near_primitives::errors::RuntimeError;
 use near_primitives::hash::CryptoHash;
 use near_primitives::profile::ProfileData;
 use near_primitives::receipt::Receipt;
-use near_primitives::runtime::config::{ActualRuntimeConfig, RuntimeConfig};
+use near_primitives::runtime::config::RuntimeConfig;
+use near_primitives::runtime::config_store::RuntimeConfigStore;
 use near_primitives::runtime::migration_data::{MigrationData, MigrationFlags};
 use near_primitives::state_record::{self, StateRecord};
 use near_primitives::test_utils::account_new;
@@ -60,8 +61,8 @@ pub struct GenesisConfig {
 
 impl Default for GenesisConfig {
     fn default() -> Self {
-        let runtime_config = ActualRuntimeConfig::new(RuntimeConfig::default())
-            .for_protocol_version(PROTOCOL_VERSION)
+        let runtime_config = RuntimeConfigStore::new(None)
+            .get_config(PROTOCOL_VERSION)
             .as_ref()
             .clone();
         Self {
@@ -103,7 +104,6 @@ impl GenesisConfig {
         genesis_config.epoch_length = self.epoch_length;
         genesis_config.num_blocks_per_year =
             (365 * 24 * 3600 * 1_000_000_000) / self.block_prod_time;
-        genesis_config.runtime_config = self.runtime_config.clone();
         genesis_config.num_block_producer_seats = self.validators.len() as u64;
         genesis_config.num_block_producer_seats_per_shard =
             vec![genesis_config.num_block_producer_seats];
@@ -216,7 +216,7 @@ impl RuntimeStandalone {
             outcomes: HashMap::new(),
             profile: HashMap::new(),
             cur_block: genesis_block,
-            tx_pool: TransactionPool::new(),
+            tx_pool: TransactionPool::new(Default::default()),
             pending_receipts: vec![],
             epoch_info_provider: Box::new(MockEpochInfoProvider::new(
                 validators.into_iter().map(|info| (info.account_id, info.amount)),
@@ -482,7 +482,7 @@ mod tests {
         let hash = runtime.send_tx(SignedTransaction::create_account(
             1,
             signer.account_id.clone(),
-            "alice".into(),
+            "alice".parse().unwrap(),
             100,
             signer.public_key(),
             &signer,
@@ -498,11 +498,12 @@ mod tests {
     #[test]
     fn process_all() {
         let (mut runtime, signer, _) = init_runtime(None);
-        assert_eq!(runtime.view_account(&"alice"), None);
+        const ACCOUNT: &str = "alice.root";
+        assert_eq!(runtime.view_account(ACCOUNT), None);
         let outcome = runtime.resolve_tx(SignedTransaction::create_account(
             1,
             signer.account_id.clone(),
-            "alice".into(),
+            ACCOUNT.parse().unwrap(),
             165437999999999999999000,
             signer.public_key(),
             &signer,
@@ -513,7 +514,7 @@ mod tests {
             Ok((_, ExecutionOutcome { status: ExecutionStatus::SuccessValue(_), .. }))
         ));
         assert_eq!(
-            runtime.view_account(&"alice"),
+            runtime.view_account(ACCOUNT),
             Some(Account::new(165437999999999999999000, 0, CryptoHash::default(), 182,))
         );
     }
@@ -526,7 +527,7 @@ mod tests {
             runtime.resolve_tx(SignedTransaction::create_contract(
                 1,
                 signer.account_id.clone(),
-                "status".into(),
+                "status.root".parse().unwrap(),
                 include_bytes!("../../examples/status-message/res/status_message.wasm")
                     .as_ref()
                     .into(),
@@ -540,7 +541,7 @@ mod tests {
         let res = runtime.resolve_tx(SignedTransaction::create_contract(
             2,
             signer.account_id.clone(),
-            "caller".into(),
+            "caller.root".parse().unwrap(),
             include_bytes!(
                 "../../examples/cross-contract-high-level/res/cross_contract_high_level.wasm"
             )
@@ -558,11 +559,11 @@ mod tests {
         let res = runtime.resolve_tx(SignedTransaction::call(
             3,
             signer.account_id.clone(),
-            "caller".into(),
+            "caller.root".parse().unwrap(),
             &signer,
             0,
             "simple_call".into(),
-            "{\"account_id\": \"status\", \"message\": \"caller status is ok!\"}"
+            "{\"account_id\": \"status.root\", \"message\": \"caller status is ok!\"}"
                 .as_bytes()
                 .to_vec(),
             300_000_000_000_000,
@@ -573,7 +574,7 @@ mod tests {
 
         assert!(matches!(res, ExecutionOutcome { status: ExecutionStatus::SuccessValue(_), .. }));
         let res = runtime.view_method_call(
-            &"status",
+            &"status.root",
             "get_status",
             "{\"account_id\": \"root\"}".as_bytes(),
         );

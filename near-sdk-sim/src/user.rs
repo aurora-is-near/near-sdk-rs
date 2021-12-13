@@ -33,7 +33,7 @@ type Runtime = Rc<RefCell<RuntimeStandalone>>;
 /// use near_sdk_sim::{to_yocto, account::AccessKey};
 /// use near_crypto::{InMemorySigner, KeyType, Signer};
 /// let master_account = near_sdk_sim::init_simulator(None);
-/// let account_id = "alice";
+/// let account_id = "alice.root";
 /// let transaction = master_account.create_transaction(account_id.parse().unwrap());
 /// // Creates a signer which contains a public key.
 /// let signer = InMemorySigner::from_seed(account_id.parse().unwrap(), KeyType::ED25519, account_id);
@@ -394,7 +394,7 @@ pub fn init_simulator(genesis_config: Option<GenesisConfig>) -> UserAccount {
 /// let initial_balance = near_sdk_sim::to_yocto("35");
 /// let contract = deploy! {
 ///   contract: ContractContract,
-///   contract_id: "contract",
+///   contract_id: "contract.root",
 ///   bytes: &TOKEN_WASM_BYTES,
 ///   signer_account: master_account,
 ///   init_method: new_default_meta(master_account_id, initial_balance.into())
@@ -414,7 +414,7 @@ pub fn init_simulator(genesis_config: Option<GenesisConfig>) -> UserAccount {
 /// let initial_balance = near_sdk_sim::to_yocto("35");
 /// let contract = deploy! {
 ///   contract: ContractContract,
-///   contract_id: "contract",
+///   contract_id: "contract.root",
 ///   bytes: &TOKEN_WASM_BYTES,
 ///   signer_account: master_account,
 ///   deposit: near_sdk_sim::STORAGE_AMOUNT, // Deposit required to cover contract storage.
@@ -480,7 +480,7 @@ macro_rules! deploy {
 /// # let initial_balance = near_sdk_sim::to_yocto("35");
 /// # let contract = deploy! {
 /// # contract: ContractContract,
-/// # contract_id: "contract",
+/// # contract_id: "contract.root",
 /// # bytes: &TOKEN_WASM_BYTES,
 /// # signer_account: master_account,
 /// # deposit: near_sdk_sim::STORAGE_AMOUNT, // Deposit required to cover contract storage.
@@ -547,7 +547,7 @@ macro_rules! call {
 /// # let initial_balance = near_sdk_sim::to_yocto("35");
 /// # let contract = deploy! {
 /// # contract: ContractContract,
-/// # contract_id: "contract",
+/// # contract_id: "contract.root",
 /// # bytes: &TOKEN_WASM_BYTES,
 /// # signer_account: master_account,
 /// # deposit: near_sdk_sim::STORAGE_AMOUNT, // Deposit required to cover contract storage.
