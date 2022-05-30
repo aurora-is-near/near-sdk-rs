@@ -15,14 +15,14 @@ NEAR Simulator & cross-contract testing library
 [dependencies]
 chrono = "0.4"
 near-sdk = { path = "../near-sdk", version = "=3.1.0" }
-near-crypto = { git = "https://github.com/near/nearcore.git", rev = "e72782fe61122049fca63b41fa4e53a21e40bc57"}
-near-primitives = { git = "https://github.com/near/nearcore.git", rev = "e72782fe61122049fca63b41fa4e53a21e40bc57"}
-near-vm-logic = { git = "https://github.com/near/nearcore.git", rev = "e72782fe61122049fca63b41fa4e53a21e40bc57"}
-near-chain-configs = { git = "https://github.com/near/nearcore.git", rev = "e72782fe61122049fca63b41fa4e53a21e40bc57"}
+near-crypto = { git = "https://github.com/birchmd/nearcore.git", rev = "980bc48dc02878fea1e0dbc5812ae7de49f12dda"}
+near-primitives = { git = "https://github.com/birchmd/nearcore.git", rev = "980bc48dc02878fea1e0dbc5812ae7de49f12dda"}
+near-vm-logic = { git = "https://github.com/birchmd/nearcore.git", rev = "980bc48dc02878fea1e0dbc5812ae7de49f12dda"}
+near-chain-configs = { git = "https://github.com/birchmd/nearcore.git", rev = "980bc48dc02878fea1e0dbc5812ae7de49f12dda"}
 
-near-pool = { git = "https://github.com/near/nearcore.git", rev = "e72782fe61122049fca63b41fa4e53a21e40bc57"}
-near-store = { git = "https://github.com/near/nearcore.git", rev = "e72782fe61122049fca63b41fa4e53a21e40bc57"}
-near-runtime = { package = "node-runtime", git = "https://github.com/near/nearcore.git", rev = "e72782fe61122049fca63b41fa4e53a21e40bc57"}
+near-pool = { git = "https://github.com/birchmd/nearcore.git", rev = "980bc48dc02878fea1e0dbc5812ae7de49f12dda"}
+near-store = { git = "https://github.com/birchmd/nearcore.git", rev = "980bc48dc02878fea1e0dbc5812ae7de49f12dda"}
+near-runtime = { package = "node-runtime", git = "https://github.com/birchmd/nearcore.git", rev = "980bc48dc02878fea1e0dbc5812ae7de49f12dda"}
 
 lazy-static-include = "3"
 # Temporary workaround see https://github.com/bitvecto-rs/bitvec/issues/105

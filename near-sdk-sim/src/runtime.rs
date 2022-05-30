@@ -189,7 +189,7 @@ pub struct RuntimeStandalone {
 }
 
 impl RuntimeStandalone {
-    pub fn new(genesis: GenesisConfig, store: Arc<Store>) -> Self {
+    pub fn new(genesis: GenesisConfig, store: Store) -> Self {
         let mut genesis_block = Block::genesis(&genesis);
         let runtime = Runtime::new();
         let tries = ShardTries::new(store, 0, 1);
@@ -334,8 +334,7 @@ impl RuntimeStandalone {
         });
         let (update, _) = self
             .tries
-            .apply_all(&apply_result.trie_changes, shard_uid)
-            .expect("Unexpected Storage error");
+            .apply_all(&apply_result.trie_changes, shard_uid);
         update.commit().expect("Unexpected io error");
         self.cur_block = self.cur_block.produce(
             apply_result.state_root,
@@ -373,7 +372,7 @@ impl RuntimeStandalone {
         set_account(&mut trie_update, account_id, account);
         trie_update.commit(StateChangeCause::ValidatorAccountsUpdate);
         let (trie_changes, _) = trie_update.finalize().expect("Unexpected Storage error");
-        let (store_update, new_root) = self.tries.apply_all(&trie_changes, shard_uid).unwrap();
+        let (store_update, new_root) = self.tries.apply_all(&trie_changes, shard_uid);
         store_update.commit().expect("No io errors expected");
         self.cur_block.state_root = new_root;
     }

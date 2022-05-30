@@ -31,8 +31,8 @@ wee_alloc = { version = "0.4.5", default-features = false, optional = true }
 once_cell = { version = "1.7.2", optional = true, default-features = false }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-near-vm-logic = { git = "https://github.com/near/nearcore.git", rev = "e72782fe61122049fca63b41fa4e53a21e40bc57"}
-near-primitives-core = { git = "https://github.com/near/nearcore.git", rev = "e72782fe61122049fca63b41fa4e53a21e40bc57"}
+near-vm-logic = { git = "https://github.com/birchmd/nearcore.git", rev = "980bc48dc02878fea1e0dbc5812ae7de49f12dda"}
+near-primitives-core = { git = "https://github.com/birchmd/nearcore.git", rev = "980bc48dc02878fea1e0dbc5812ae7de49f12dda"}
 
 [dev-dependencies]
 rand = "0.7.2"

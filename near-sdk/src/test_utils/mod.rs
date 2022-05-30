@@ -5,7 +5,6 @@ pub mod test_env;
 
 mod context;
 pub use context::{accounts, testing_env_with_promise_results, VMContextBuilder};
-use near_vm_logic::mocks::mock_external::Receipt;
 
 /// Initializes a testing environment to mock interactions which would otherwise go through a
 /// validator node. This macro will initialize or overwrite the [`BLOCKCHAIN_INTERFACE`]
@@ -102,20 +101,6 @@ pub fn get_logs() -> Vec<String> {
         .logs();
     env::set_blockchain_interface(blockchain_interface);
     logs
-}
-
-/// Accessing receipts created by the contract. Only available in unit tests.
-#[allow(dead_code)]
-pub fn get_created_receipts() -> Vec<Receipt> {
-    let blockchain_interface =
-        env::take_blockchain_interface().expect("Blockchain interface is not set");
-    let receipts = blockchain_interface
-        .as_mocked_blockchain()
-        .expect("MockedBlockchain interface expected")
-        .created_receipts()
-        .clone();
-    env::set_blockchain_interface(blockchain_interface);
-    receipts
 }
 
 /// Objects stored on the trie directly should have identifiers. If identifier is not provided

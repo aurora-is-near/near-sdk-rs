@@ -2,7 +2,7 @@ use crate::environment::blockchain_interface::BlockchainInterface;
 use crate::test_utils::VMContextBuilder;
 use crate::types::{Balance, PromiseResult};
 use crate::RuntimeFeesConfig;
-use near_vm_logic::mocks::mock_external::{MockedExternal, Receipt};
+use near_vm_logic::mocks::mock_external::MockedExternal;
 use near_vm_logic::mocks::mock_memory::MockedMemory;
 use near_vm_logic::types::PromiseResult as VmPromiseResult;
 use near_vm_logic::{External, MemoryLike, VMConfig, VMContext, VMLogic, VMOutcome};
@@ -84,9 +84,6 @@ impl MockedBlockchain {
         std::mem::take(&mut self.logic_fixture.ext.fake_trie)
     }
 
-    pub fn created_receipts(&self) -> &Vec<Receipt> {
-        self.logic_fixture.ext.get_receipt_create_calls()
-    }
     pub fn outcome(&self) -> VMOutcome {
         self.logic.borrow().clone_outcome()
     }
