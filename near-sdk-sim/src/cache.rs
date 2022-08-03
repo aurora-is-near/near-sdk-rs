@@ -1,4 +1,5 @@
 use crate::types::CompiledContractCache;
+use near_primitives::hash::CryptoHash;
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
@@ -52,23 +53,25 @@ impl ContractCache {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn to_arc(&self) -> Arc<ContractCache> {
-        Arc::new(self.clone())
+    pub(crate) fn to_box(&self) -> Box<ContractCache> {
+        Box::new(self.clone())
     }
 }
 
 impl CompiledContractCache for ContractCache {
-    fn put(&self, key: &[u8], value: &[u8]) -> Result<(), std::io::Error> {
-        self.insert(key, value);
+    fn put(&self, key: &CryptoHash, value: Vec<u8>) -> Result<(), std::io::Error> {
+        let key: &[u8] = key.as_ref();
+        self.insert(key, &value);
         let mut file = self.open_file(key).expect("File failed to open");
         let metadata = file.metadata()?;
         if metadata.len() != value.len() as u64 {
-            file.write_all(value)?;
+            file.write_all(&value)?;
         }
         Ok(())
     }
 
-    fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>, std::io::Error> {
+    fn get(&self, key: &CryptoHash) -> Result<Option<Vec<u8>>, std::io::Error> {
+        let key: &[u8] = key.as_ref();
         if (*self.data).lock().unwrap().contains_key(key) {
             return Ok(self.get(key));
         } else if self.file_exists(key) {
@@ -86,6 +89,6 @@ pub fn create_cache() -> ContractCache {
     ContractCache::new()
 }
 
-pub fn cache_to_arc(cache: &ContractCache) -> Arc<ContractCache> {
-    cache.to_arc()
+pub fn cache_to_box(cache: &ContractCache) -> Box<ContractCache> {
+    cache.to_box()
 }

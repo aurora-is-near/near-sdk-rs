@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::cache::{cache_to_arc, create_cache, ContractCache};
+use crate::cache::{cache_to_box, create_cache, ContractCache};
 use crate::ViewResult;
 use chrono::{TimeZone, Utc};
 use near_crypto::{InMemorySigner, KeyType, PublicKey, Signer};
@@ -121,7 +121,7 @@ impl GenesisConfig {
 pub struct Block {
     prev_block: Option<Arc<Block>>,
     state_root: CryptoHash,
-    gas_burnt: Gas,
+    pub gas_burnt: Gas,
     pub epoch_height: EpochHeight,
     pub block_height: BlockHeight,
     pub block_timestamp: u64,
@@ -192,7 +192,8 @@ impl RuntimeStandalone {
     pub fn new(genesis: GenesisConfig, store: Store) -> Self {
         let mut genesis_block = Block::genesis(&genesis);
         let runtime = Runtime::new();
-        let tries = ShardTries::new(store, 0, 1);
+        let factory = near_store::TrieCacheFactory::new(Default::default(), 0, 1);
+        let tries = ShardTries::new(store, factory);
         let state_root = runtime.apply_genesis_state(
             tries.clone(),
             0,
@@ -302,7 +303,7 @@ impl RuntimeStandalone {
             #[cfg(feature = "no_contract_cache")]
             cache: None,
             #[cfg(not(feature = "no_contract_cache"))]
-            cache: Some(cache_to_arc(&self.cache)),
+            cache: Some(cache_to_box(&self.cache)),
             block_hash: Default::default(),
             is_new_chunk: true,
             migration_data: Arc::new(MigrationData::default()),
@@ -405,7 +406,7 @@ impl RuntimeStandalone {
             epoch_height: self.cur_block.epoch_height,
             block_timestamp: self.cur_block.block_timestamp,
             current_protocol_version: PROTOCOL_VERSION,
-            cache: Some(cache_to_arc(&self.cache)),
+            cache: Some(cache_to_box(&self.cache)),
             block_hash: self.cur_block.state_root,
         };
         let result = viewer.call_function(
