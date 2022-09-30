@@ -61,10 +61,8 @@ pub struct GenesisConfig {
 
 impl Default for GenesisConfig {
     fn default() -> Self {
-        let runtime_config = RuntimeConfigStore::new(None)
-            .get_config(PROTOCOL_VERSION)
-            .as_ref()
-            .clone();
+        let runtime_config =
+            RuntimeConfigStore::new(None).get_config(PROTOCOL_VERSION).as_ref().clone();
         Self {
             genesis_time: 0,
             gas_price: 100_000_000,
@@ -109,11 +107,10 @@ impl GenesisConfig {
             vec![genesis_config.num_block_producer_seats];
         genesis_config.validators = self.validators.clone();
 
-        near_chain_configs::Genesis {
-            config: genesis_config,
-            records: near_chain_configs::GenesisRecords(self.state_records.clone()),
-            records_file: Default::default(),
-        }
+        near_chain_configs::Genesis::new(
+            genesis_config,
+            near_chain_configs::GenesisRecords(self.state_records.clone()),
+        )
     }
 }
 
@@ -192,8 +189,10 @@ impl RuntimeStandalone {
     pub fn new(genesis: GenesisConfig, store: Store) -> Self {
         let mut genesis_block = Block::genesis(&genesis);
         let runtime = Runtime::new();
-        let factory = near_store::TrieCacheFactory::new(Default::default(), 0, 1);
-        let tries = ShardTries::new(store, factory);
+        let trie_config = near_store::TrieConfig::default();
+        let flat_storage = near_store::flat_state::FlatStateFactory {};
+        let shard_uid = near_store::ShardUId::single_shard();
+        let tries = ShardTries::new(store, trie_config, &[shard_uid], flat_storage);
         let state_root = runtime.apply_genesis_state(
             tries.clone(),
             0,
@@ -312,14 +311,13 @@ impl RuntimeStandalone {
 
         let shard_uid = as_shard_uid(0);
         let apply_result = self.runtime.apply(
-            self.tries.get_trie_for_shard(shard_uid),
-            self.cur_block.state_root,
+            self.tries.get_trie_for_shard(shard_uid, self.cur_block.state_root),
             &None,
             &apply_state,
             &self.pending_receipts,
             &Self::prepare_transactions(&mut self.tx_pool),
             self.epoch_info_provider.as_ref(),
-            None,
+            Default::default(),
         )?;
         self.pending_receipts = apply_result.outgoing_receipts;
         apply_result.outcomes.iter().for_each(|outcome| {
@@ -333,9 +331,7 @@ impl RuntimeStandalone {
                 ExecutionMetadata::V1 => (),
             };
         });
-        let (update, _) = self
-            .tries
-            .apply_all(&apply_result.trie_changes, shard_uid);
+        let (update, _) = self.tries.apply_all(&apply_result.trie_changes, shard_uid);
         update.commit().expect("Unexpected io error");
         self.cur_block = self.cur_block.produce(
             apply_result.state_root,

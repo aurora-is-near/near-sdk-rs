@@ -1,5 +1,5 @@
 use near_primitives_core::runtime::fees::RuntimeFeesConfig;
-use near_vm_logic::{ViewConfig, VMConfig};
+use near_vm_logic::{VMConfig, ViewConfig};
 
 use crate::environment::mocked_blockchain::MockedBlockchain;
 use crate::test_utils::test_env::*;
@@ -117,9 +117,7 @@ impl VMContextBuilder {
 
     pub fn is_view(&mut self, is_view: bool) -> &mut Self {
         if is_view {
-            self.context.view_config = Some(ViewConfig {
-                max_gas_burnt: 200_000_000_000_000,
-            });
+            self.context.view_config = Some(ViewConfig { max_gas_burnt: 200_000_000_000_000 });
         } else {
             self.context.view_config = None;
         }
