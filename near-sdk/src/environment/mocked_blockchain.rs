@@ -57,7 +57,7 @@ impl MockedBlockchain {
         let mut ext = Box::new(MockedExternal::new());
         ext.fake_trie = storage;
         ext.validators = validators.into_iter().map(|(k, v)| (k.parse().unwrap(), v)).collect();
-        let memory = memory_opt.unwrap_or(Box::new(MockedMemory {}));
+        let memory = memory_opt.unwrap_or(Box::new(MockedMemory::default()));
         let promise_results = Box::new(promise_results.into_iter().map(From::from).collect());
         let config = Box::new(config);
         let fees_config = Box::new(fees_config);
@@ -89,7 +89,7 @@ impl MockedBlockchain {
     }
 
     pub fn gas(&mut self, gas_amount: u32) {
-        self.logic.borrow_mut().gas(gas_amount).unwrap()
+        self.logic.borrow_mut().gas(gas_amount.into()).unwrap()
     }
 
     pub fn logs(&self) -> Vec<String> {

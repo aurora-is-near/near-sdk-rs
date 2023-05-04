@@ -9,7 +9,7 @@ use near_pool::{types::PoolIterator, TransactionPool};
 use near_primitives::account::{AccessKey, Account};
 use near_primitives::errors::RuntimeError;
 use near_primitives::hash::CryptoHash;
-use near_primitives::profile::ProfileData;
+use near_primitives::profile::ProfileDataV3 as ProfileData;
 use near_primitives::receipt::Receipt;
 use near_primitives::runtime::config::RuntimeConfig;
 use near_primitives::runtime::config_store::RuntimeConfigStore;
@@ -190,10 +190,12 @@ impl RuntimeStandalone {
         let mut genesis_block = Block::genesis(&genesis);
         let runtime = Runtime::new();
         let trie_config = near_store::TrieConfig::default();
-        let flat_storage = near_store::flat_state::FlatStateFactory {};
+        let flat_storage = near_store::flat::FlatStorageManager::new(store.clone());
         let shard_uid = near_store::ShardUId::single_shard();
         let tries = ShardTries::new(store, trie_config, &[shard_uid], flat_storage);
+        let op_limit = std::sync::atomic::AtomicUsize::new(1);
         let state_root = runtime.apply_genesis_state(
+            &op_limit,
             tries.clone(),
             0,
             &[],
@@ -288,7 +290,7 @@ impl RuntimeStandalone {
     /// Processes one block. Populates outcomes and producining new pending_receipts.
     pub fn produce_block(&mut self) -> Result<(), RuntimeError> {
         let apply_state = ApplyState {
-            block_index: self.cur_block.block_height,
+            block_height: self.cur_block.block_height,
             prev_block_hash: Default::default(),
             epoch_height: self.cur_block.epoch_height,
             gas_price: self.cur_block.gas_price,
@@ -325,14 +327,15 @@ impl RuntimeStandalone {
             self.outcomes.insert(outcome.id, outcome.outcome.clone());
             // purposely not using `if let` to take advantage of exhaustiveness check
             match &outcome.outcome.metadata {
-                ExecutionMetadata::V2(profile) => {
+                ExecutionMetadata::V3(profile) => {
                     self.profile.insert(outcome.id, profile.clone());
                 }
-                ExecutionMetadata::V1 => (),
+                ExecutionMetadata::V1 | ExecutionMetadata::V2(_) => (),
             };
         });
-        let (update, _) = self.tries.apply_all(&apply_result.trie_changes, shard_uid);
-        update.commit().expect("Unexpected io error");
+        let mut store_update = self.tries.store_update();
+        self.tries.apply_all(&apply_result.trie_changes, shard_uid, &mut store_update);
+        store_update.commit().expect("Unexpected io error");
         self.cur_block = self.cur_block.produce(
             apply_result.state_root,
             self.genesis.epoch_length,
@@ -366,10 +369,11 @@ impl RuntimeStandalone {
         let account_id = crate::to_near_account_id(account_id);
         let shard_uid = as_shard_uid(0);
         let mut trie_update = self.tries.new_trie_update(shard_uid, self.cur_block.state_root);
+        let mut store_update = self.tries.store_update();
         set_account(&mut trie_update, account_id, account);
         trie_update.commit(StateChangeCause::ValidatorAccountsUpdate);
-        let (trie_changes, _) = trie_update.finalize().expect("Unexpected Storage error");
-        let (store_update, new_root) = self.tries.apply_all(&trie_changes, shard_uid);
+        let (_, trie_changes, _) = trie_update.finalize().expect("Unexpected Storage error");
+        let new_root = self.tries.apply_all(&trie_changes, shard_uid, &mut store_update);
         store_update.commit().expect("No io errors expected");
         self.cur_block.state_root = new_root;
     }

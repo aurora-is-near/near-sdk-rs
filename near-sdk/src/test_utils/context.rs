@@ -35,7 +35,7 @@ impl VMContextBuilder {
                 signer_account_pk: vec![0u8; 32],
                 predecessor_account_id: convert_account_id(bob()),
                 input: vec![],
-                block_index: 0,
+                block_height: 0,
                 block_timestamp: 0,
                 epoch_height: 0,
                 account_balance: 10u128.pow(26),
@@ -71,7 +71,7 @@ impl VMContextBuilder {
     }
 
     pub fn block_index(&mut self, block_index: BlockHeight) -> &mut Self {
-        self.context.block_index = block_index;
+        self.context.block_height = block_index;
         self
     }
 

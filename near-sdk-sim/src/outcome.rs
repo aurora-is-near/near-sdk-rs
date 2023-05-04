@@ -2,7 +2,7 @@ use crate::hash::CryptoHash;
 use crate::runtime::{init_runtime, RuntimeStandalone};
 use crate::transaction::{ExecutionOutcome, ExecutionStatus};
 use core::fmt;
-use near_primitives::profile::ProfileData;
+use near_primitives::profile::ProfileDataV3 as ProfileData;
 use near_primitives::transaction::ExecutionStatus::{SuccessReceiptId, SuccessValue};
 use near_primitives::types::AccountId;
 use near_runtime::state_viewer;
