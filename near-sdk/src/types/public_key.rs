@@ -142,8 +142,8 @@ impl serde::Serialize for PublicKey {
 }
 
 impl BorshDeserialize for PublicKey {
-    fn deserialize(buf: &mut &[u8]) -> io::Result<Self> {
-        <Vec<u8> as BorshDeserialize>::deserialize(buf).and_then(|s| {
+    fn deserialize_reader<R: io::Read>(reader: &mut R) -> io::Result<Self> {
+        <Vec<u8> as BorshDeserialize>::deserialize_reader(reader).and_then(|s| {
             Self::try_from(s).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
         })
     }

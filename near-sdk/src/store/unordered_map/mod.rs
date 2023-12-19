@@ -115,10 +115,10 @@ where
     V: BorshSerialize,
     H: ToKey,
 {
-    fn deserialize(buf: &mut &[u8]) -> Result<Self, borsh::maybestd::io::Error> {
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> Result<Self, std::io::Error> {
         Ok(Self {
-            keys: BorshDeserialize::deserialize(buf)?,
-            values: BorshDeserialize::deserialize(buf)?,
+            keys: BorshDeserialize::deserialize_reader(reader)?,
+            values: BorshDeserialize::deserialize_reader(reader)?,
         })
     }
 }

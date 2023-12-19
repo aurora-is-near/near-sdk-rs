@@ -45,11 +45,11 @@ impl<T> BorshDeserialize for FreeList<T>
 where
     T: BorshSerialize,
 {
-    fn deserialize(buf: &mut &[u8]) -> Result<Self, borsh::maybestd::io::Error> {
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> Result<Self, std::io::Error> {
         Ok(Self {
-            first_free: BorshDeserialize::deserialize(buf)?,
-            occupied_count: BorshDeserialize::deserialize(buf)?,
-            elements: BorshDeserialize::deserialize(buf)?,
+            first_free: BorshDeserialize::deserialize_reader(reader)?,
+            occupied_count: BorshDeserialize::deserialize_reader(reader)?,
+            elements: BorshDeserialize::deserialize_reader(reader)?,
         })
     }
 }
